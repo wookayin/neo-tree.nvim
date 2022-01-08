@@ -237,14 +237,16 @@ local create_window = function(state)
   local win
   if state.force_float or win_options.position == "float" then
     state.force_float = nil
+    -- get the default options for a floating window
     local sourceTitle = state.name:gsub("^%l", string.upper)
     win_options = popups.popup_options("Neo-tree " .. sourceTitle, 40, win_options)
+    local b = win_options.border
     local size = { width = "50%", height = "80%" }
-    print(vim.inspect(state.window))
+
+    -- override with source specific options
+    win_options.zindex = 40
     win_options.size = utils.resolve_config_option(state, "window.popup.size", size)
     win_options.position = utils.resolve_config_option(state, "window.popup.position", "50%")
-    win_options.zindex = 40
-    local b = win_options.border
     win_options.border = utils.resolve_config_option(state, "window.popup.border", b)
     win = NuiPopup(win_options)
     win:mount()
