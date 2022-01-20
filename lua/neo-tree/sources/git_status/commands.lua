@@ -122,7 +122,7 @@ M.open = cc.open
 M.open_split = cc.open_split
 M.open_vsplit = cc.open_vsplit
 
-M.refresh = gs.refresh
+M.refresh = refresh
 
 M.rename = function(state)
   cc.rename(state, refresh)

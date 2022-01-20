@@ -8,6 +8,7 @@ local renderer = require("neo-tree.ui.renderer")
 local inputs = require("neo-tree.ui.inputs")
 local events = require("neo-tree.events")
 local log = require("neo-tree.log")
+local fs_watch = require("neo-tree.sources.filesystem.lib.fs_watch")
 
 local M = {}
 local source_data = {}
@@ -321,6 +322,36 @@ M.show = function(source_name)
     M.navigate(source_name, state.path, nil, function()
       vim.api.nvim_set_current_win(current_win)
     end)
+  end
+end
+
+local known_dot_git_folders = {}
+M.watch_git_project = function (source_name, path)
+  local state = M.get_state(source_name)
+  local root = utils.get_git_project_root(path)
+  if not utils.truthy(root) then
+    return
+  end
+  dot_git = root .. utils.path_separator .. ".git"
+  if dot_git ~= state.git_folder then
+    log.debug("Watching .git folder: ", dot_git)
+    if utils.truthy(state.git_folder) then
+      fs_watch.unwatch_folder(state.git_folder)
+    end
+    fs_watch.watch_folder(dot_git)
+    state.git_folder = dot_git
+    if #known_dot_git_folders == 0 then
+      events.subscribe({
+        event = events.FS_EVENT,
+        handler = function(args)
+         local is_git_root = known_dot_git_folders[args.path]
+         if is_git_root then
+           events.fire_event(events.GIT_EVENT, args)
+         end
+        end,
+      })
+    end
+    known_dot_git_folders[dot_git] = true
   end
 end
 

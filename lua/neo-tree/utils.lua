@@ -168,8 +168,12 @@ M.get_diagnostic_counts = function()
   return lookup
 end
 
-M.get_git_project_root = function()
-  return vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+M.get_git_project_root = function(path)
+  local cmd = "git rev-parse --show-toplevel"
+  if M.truthy(path) then
+    cmd = 'cd ' .. vim.fn.shellescape(path) .. " && " .. cmd
+  end
+  return vim.fn.systemlist(cmd)[1]
 end
 
 ---Parse "git status" output for the current working directory.

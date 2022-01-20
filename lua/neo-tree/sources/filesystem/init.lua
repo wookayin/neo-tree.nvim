@@ -291,23 +291,9 @@ M.setup = function(config, global_config)
   if config.follow_current_file then
     manager.subscribe(M.name, {
       event = events.VIM_BUFFER_ENTER,
-      handler = wrap(manager.follow),
+      handler = M.follow,
     })
   end
-
-  --Dispose ourselves if the tab closes
-  manager.subscribe(M.name, {
-    event = events.VIM_TAB_CLOSED,
-    handler = function(args)
-      local tabnr = tonumber(args.afile)
-      if tabnr then
-        log.debug("VIM_TAB_CLOSED: disposing state for tab", tabnr)
-        manager.dispose(M.name, tabnr)
-      else
-        log.error("VIM_TAB_CLOSED: no tab number found in args.afile")
-      end
-    end,
-  })
 end
 
 ---Expands or collapses the current node.

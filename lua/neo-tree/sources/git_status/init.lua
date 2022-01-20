@@ -22,8 +22,10 @@ end
 ---@param path string Path to navigate to. If empty, will navigate to the cwd.
 M.navigate = function(path)
   local state = get_state()
+  state.path = path or vim.fn.getcwd()
   state.dirty = false
   items.get_git_status(state)
+  manager.watch_git_project(M.name, state.path)
 end
 
 ---Configures the plugin, should be called before the plugin is used.
@@ -44,14 +46,21 @@ M.setup = function(config, global_config)
   end
 
   manager.subscribe(M.name, {
-    event = events.VIM_BUFFER_CHANGED,
-    handler = wrap(manager.refresh),
+    event = events.FS_EVENT,
+    handler = function(args)
+      local state = get_state()
+      if args.path == state.git_folder then
+        M.navigate()
+      else
+        log.debug("Ignoring fs event for " .. args.path)
+      end
+    end,
   })
 
   if config.bind_to_cwd then
     manager.subscribe(M.name, {
       event = events.VIM_DIR_CHANGED,
-      handler = wrap(manager.refresh),
+      handler = wrap(manager.dir_changed),
     })
   end
 
