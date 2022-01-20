@@ -53,6 +53,7 @@ M.get_state = function(source_name, tabnr)
   end
   state = utils.table_copy(sd.default_config)
   state.tabnr = tabnr
+  state.dirty = true
   sd.state_by_tab[tabnr] = state
   return state
 end
@@ -146,6 +147,9 @@ M.dir_changed = function(source_name)
   end
   if state.path and renderer.window_exists(state) then
     M.navigate(source_name, cwd)
+  else
+    state.path = cwd
+    state.dirty = true
   end
 end
 
@@ -183,7 +187,7 @@ M.focus = function(source_name, path_to_reveal, callback)
   if path_to_reveal then
     M.navigate(source_name, state.path, path_to_reveal, callback)
   else
-    if renderer.window_exists(state) then
+    if not state.dirty and renderer.window_exists(state) then
       vim.api.nvim_set_current_win(state.winid)
     else
       M.navigate(source_name, state.path, nil, callback)
@@ -200,14 +204,8 @@ M.navigate = function(source_name, path, path_to_reveal, callback)
   require("neo-tree.sources." .. source_name).navigate(path, path_to_reveal, callback)
 end
 
-M.reveal_current_file = function(source_name, toggle_if_open)
+M.reveal_current_file = function(source_name)
   log.trace("Revealing current file")
-  if toggle_if_open then
-    if M.close() then
-      -- It was open, and now it's not.
-      return
-    end
-  end
   local state = M.get_state(source_name)
   require("neo-tree").close_all_except(source_name)
   local path = M.get_path_to_reveal()
@@ -225,6 +223,8 @@ M.reveal_current_file = function(source_name, toggle_if_open)
       if response == true then
         state.path = cwd
         M.focus(path)
+      else
+        M.focus()
       end
     end)
     return
@@ -249,12 +249,16 @@ end
 ---Refreshes the tree by scanning the filesystem again.
 M.refresh = function(source_name, callback)
   log.trace(source_name, " refresh")
-  local state = M.get_state(source_name)
-  if state.path and renderer.window_exists(state) then
-    if type(callback) ~= "function" then
-      callback = nil
+  local sd = get_source_data(source_name)
+  for _, state in pairs(sd.state_by_tab) do
+    if state.path and renderer.window_exists(state) then
+      if type(callback) ~= "function" then
+        callback = nil
+      end
+      M.navigate(source_name, state.path, nil, callback)
+    else
+      state.dirty = true
     end
-    M.navigate(source_name, state.path, nil, callback)
   end
 end
 
@@ -309,11 +313,15 @@ M.setup = function(source_name, config, global_config)
   end
 end
 
----Opens the tree and displays the current path or cwd.
----@param callback function Callback to call after the items are loaded.
-M.show = function(source_name, callback)
+---Opens the tree and displays the current path or cwd, without focusing it.
+M.show = function(source_name)
   local state = M.get_state(source_name)
-  M.navigate(source_name, state.path, nil, callback)
+  if not renderer.window_exists(state) then
+    local current_win = vim.api.nvim_get_current_win()
+    M.navigate(source_name, state.path, nil, function()
+      vim.api.nvim_set_current_win(current_win)
+    end)
+  end
 end
 
 return M

@@ -36,6 +36,7 @@ end
 ---@param path string Path to navigate to. If empty, will navigate to the cwd.
 M.navigate = function(path)
   local state = get_state()
+  state.dirty = false
   local path_changed = false
   if path == nil then
     path = vim.fn.getcwd()

@@ -125,6 +125,7 @@ M.float = function(source_name, toggle_if_open)
   manager.float(source_name)
 end
 
+--TODO: Remove the close_others option in 2.0
 M.focus = function(source_name, close_others, toggle_if_open)
   source_name = check_source(source_name)
   if toggle_if_open then
@@ -143,7 +144,13 @@ M.focus = function(source_name, close_others, toggle_if_open)
 end
 
 M.reveal_current_file = function(source_name, toggle_if_open)
-  manager.reveal_current_file(source_name, toggle_if_open)
+  if toggle_if_open then
+    if manager.close(source_name) then
+      -- It was open, and now it's not.
+      return
+    end
+  end
+  manager.reveal_current_file(source_name)
 end
 
 M.get_prior_window = function()
@@ -201,6 +208,7 @@ M.win_enter_event = function()
   end
 end
 
+--TODO: Remove the do_not_focus and close_others options in 2.0
 M.show = function(source_name, do_not_focus, close_others, toggle_if_open)
   source_name = check_source(source_name)
   if toggle_if_open then
@@ -216,12 +224,9 @@ M.show = function(source_name, do_not_focus, close_others, toggle_if_open)
     M.close_all_except(source_name)
   end
   if do_not_focus then
-    local current_win = vim.api.nvim_get_current_win()
-    manager.show(source_name, function()
-      vim.api.nvim_set_current_win(current_win)
-    end)
-  else
     manager.show(source_name)
+  else
+    manager.focus(source_name)
   end
 end
 

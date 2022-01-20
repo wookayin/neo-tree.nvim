@@ -108,7 +108,7 @@ end
 local navigate_internal = function(path, path_to_reveal, callback)
   log.trace("navigate_internal", path, path_to_reveal)
   local state = get_state()
-  print(state.filters)
+  state.dirty = false
   local path_changed = false
   if path == nil then
     path = vim.fn.getcwd()

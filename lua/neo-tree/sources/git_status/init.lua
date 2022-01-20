@@ -22,6 +22,7 @@ end
 ---@param path string Path to navigate to. If empty, will navigate to the cwd.
 M.navigate = function(path)
   local state = get_state()
+  state.dirty = false
   items.get_git_status(state)
 end
 
