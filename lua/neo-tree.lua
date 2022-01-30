@@ -245,12 +245,19 @@ M.buffer_enter_event = function(args)
   end
 
   -- For all others, make sure another buffer is not hijacking our window
+  -- ..but not if the position is "split"
   local prior_buf = vim.fn.bufnr("#")
   if prior_buf < 1 then
     return
   end
   local prior_type = vim.api.nvim_buf_get_option(prior_buf, "filetype")
   if prior_type == "neo-tree" then
+    local position = vim.api.nvim_buf_get_var(prior_buf, "neo_tree_position")
+    if position == "split" then
+      -- nothing to do here, files are supposed to open in same window
+      return
+    end
+
     local current_tabnr = vim.api.nvim_get_current_tabpage()
     local neo_tree_tabnr = vim.api.nvim_buf_get_var(prior_buf, "neo_tree_tabnr")
     if neo_tree_tabnr ~= current_tabnr then
@@ -276,7 +283,7 @@ M.buffer_enter_event = function(args)
       pcall(vim.cmd, "bdelete " .. bufname)
       local fake_state = {
         window = {
-          position = "left",
+          position = position,
         },
       }
       utils.open_file(fake_state, bufname)
