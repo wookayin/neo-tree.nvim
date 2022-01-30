@@ -382,6 +382,22 @@ M.setup = function(config)
     source.commands = require(mod_root .. ".commands")
     source.name = source_name
 
+    --validate the window.position
+    local pos_key = source_name .. ".window.position"
+    local position = utils.get_value(config, pos_key, "left", true)
+    local valid_positions = {
+      left = true,
+      right = true,
+      top = true,
+      bottom = true,
+      float = true,
+      split = true,
+    }
+    if not valid_positions[position] then
+      log.error("Invalid value for ", pos_key, ": ", position)
+      config[source_name].window.position = "left"
+    end
+
     -- Make sure all the mappings are normalized so they will merge properly.
     normalize_mappings(source)
     normalize_mappings(config[source_name])
